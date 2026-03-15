@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FitTrack">
+<meta name="theme-color" content="#0e0f0d">
+<title>FitTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#0e0f0d;--bg2:#151614;--bg3:#1c1d1a;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#e8e6df;--text2:#8a887f;--text3:#555450;--green:#6fcf7a;--gdim:rgba(111,207,122,0.13);--amber:#e8a84a;--adim:rgba(232,168,74,0.13);--red:#e06060;--rdim:rgba(224,96,96,0.11);--blue:#6fa8e8;--bdim:rgba(111,168,232,0.11);--nav-h:60px;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;min-height:100vh;}
+h1,.display{font-family:'Fraunces',serif;font-weight:300;}
+.app{display:flex;min-height:100vh;}
+/* Sidebar desktop */
+.sidebar{display:none;width:220px;min-width:220px;background:var(--bg2);border-right:1px solid var(--border);flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;}
+.main{flex:1;padding:20px 16px;overflow-y:auto;}
+/* Mobile bottom nav */
+.mobile-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0px);}
+.mob-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;color:var(--text3);font-size:9px;gap:3px;transition:color .15s;}
+.mob-item.active{color:var(--green);}
+.mob-icon{font-size:17px;}
+/* Mobile header */
+.mob-header{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;}
+.mob-title{font-family:'Fraunces',serif;font-size:19px;font-weight:300;}
+.mob-sub{font-size:10px;color:var(--text3);}
+/* Desktop overrides */
+@media(min-width:768px){
+  .sidebar{display:flex;}
+  .mobile-nav,.mob-header{display:none;}
+  .main{margin-left:220px;padding:36px 40px;max-width:1100px;}
+}
+/* Sidebar */
+.logo{font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:var(--text);padding:0 24px 24px;border-bottom:1px solid var(--border);letter-spacing:-.02em;}
+.logo span{color:var(--green);}
+.nav{padding:14px 0;flex:1;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 24px;cursor:pointer;color:var(--text2);transition:all .15s;font-size:12px;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.03);}
+.nav-item.active{color:var(--green);border-left-color:var(--green);background:var(--gdim);}
+.nav-icon{font-size:13px;width:14px;text-align:center;}
+.nav-sec{font-size:10px;letter-spacing:.1em;color:var(--text3);padding:12px 24px 4px;text-transform:uppercase;}
+.sb-foot{padding:14px 24px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);}
+/* Pages */
+.page{display:none;padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 20px);}
+.page.active{display:block;animation:fi .18s ease;}
+@media(min-width:768px){.page{padding-bottom:20px;}}
+@keyframes fi{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+/* Page header */
+.ph{margin-bottom:20px;}
+.pt{font-size:26px;font-weight:300;letter-spacing:-.02em;}
+.ps{color:var(--text2);font-size:11px;margin-top:2px;}
+@media(min-width:768px){.ph{display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:26px;}.pt{font-size:30px;}}
+/* Grids */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.g2{display:grid;grid-template-columns:1fr;gap:12px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+@media(min-width:768px){.kpi-grid{grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}.g2{grid-template-columns:1fr 1fr;gap:14px;}}
+/* Cards */
+.kc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.kl{font-size:10px;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;margin-bottom:5px;}
+.kv{font-family:'Fraunces',serif;font-size:22px;font-weight:300;color:var(--text);letter-spacing:-.02em;}
+.ku{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);margin-left:2px;}
+.kd{font-size:10px;margin-top:3px;}
+.kd.up{color:var(--green);}.kd.down{color:var(--red);}.kd.n{color:var(--text3);}
+@media(min-width:768px){.kc{padding:16px 18px;}.kv{font-size:26px;}}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.ct{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
+.sec{margin-bottom:18px;}
+.st{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);margin-bottom:8px;}
+/* Week dots */
+.wdots{display:flex;gap:4px;margin-bottom:12px;}
+.di{flex:1;text-align:center;}
+.dd{width:100%;aspect-ratio:1;max-width:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;margin:0 auto 3px;border:1px solid var(--border);}
+.dd.done{background:var(--gdim);border-color:rgba(111,207,122,.3);color:var(--green);}
+.dd.rest{background:var(--bg3);color:var(--text3);}
+.dd.today{border-color:var(--green);color:var(--green);}
+.dl{font-size:8px;color:var(--text3);}
+/* Progress */
+.pr{display:flex;align-items:center;gap:7px;margin:5px 0;font-size:11px;}
+.pl{min-width:56px;color:var(--text2);}
+.pt2{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;}
+.pf{height:100%;border-radius:2px;transition:width .5s ease;}
+.pv{min-width:26px;text-align:right;color:var(--text3);}
+/* Sleep bars */
+.sr{display:flex;align-items:center;gap:6px;margin:4px 0;font-size:11px;}
+.sd{width:18px;color:var(--text3);}
+.sbt{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.sbf{height:100%;border-radius:3px;}
+.sv{width:26px;text-align:right;color:var(--text2);}
+.se{width:22px;color:var(--text3);font-size:10px;}
+/* Forms */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fgroup{display:flex;flex-direction:column;gap:4px;}
+.fgroup.full{grid-column:1/-1;}
+.fl{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);}
+.fi,.fs,.fta{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 11px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color .15s;-webkit-appearance:none;width:100%;}
+.fi:focus,.fs:focus,.fta:focus{border-color:rgba(111,207,122,.4);background:var(--bg2);}
+.fs{cursor:pointer;}.fs option{background:var(--bg2);}
+.fta{resize:vertical;min-height:60px;}
+.fsec-t{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text2);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+/* Buttons */
+.btn{padding:10px 16px;border-radius:6px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;border:1px solid var(--border2);transition:all .15s;letter-spacing:.02em;}
+.btn-p{background:var(--green);color:#0e0f0d;border-color:var(--green);font-weight:500;}
+.btn-p:active{background:#82d98c;}
+.btn-s{background:transparent;color:var(--text2);}
+.btn-s:active{background:var(--bg3);}
+.btn-row{display:flex;gap:8px;margin-top:14px;}
+.btn-w{width:100%;text-align:center;}
+/* Tabs */
+.tabs{display:flex;margin-bottom:14px;border-bottom:1px solid var(--border);}
+.tab{padding:7px 12px;font-size:11px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:all .15s;}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+/* Import */
+.ibox{border:1px dashed var(--border2);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;}
+.ibox:hover,.ibox.drag{border-color:rgba(111,207,122,.4);background:var(--gdim);}
+.ibox input{display:none;}
+.iicon{font-size:26px;margin-bottom:6px;opacity:.4;}
+.it{font-size:12px;color:var(--text2);margin-bottom:3px;}
+.is{font-size:11px;color:var(--text3);}
+.iprev{background:var(--bg3);border-radius:8px;padding:10px;margin-top:8px;font-size:11px;color:var(--text2);max-height:150px;overflow-y:auto;}
+.iprev table{width:100%;border-collapse:collapse;}
+.iprev th{color:var(--text3);text-align:left;padding:2px 5px;font-size:10px;}
+.iprev td{padding:3px 5px;border-bottom:1px solid var(--border);color:var(--text2);}
+/* Table */
+.dt{width:100%;border-collapse:collapse;}
+.dt th{text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);padding:6px 8px;border-bottom:1px solid var(--border);font-weight:500;}
+.dt td{padding:8px 8px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text2);}
+.dt tr:last-child td{border-bottom:none;}
+/* Tags */
+.tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;}
+.tg{background:var(--gdim);color:var(--green);}
+.ta{background:var(--adim);color:var(--amber);}
+.tb{background:var(--bdim);color:var(--blue);}
+/* Coach */
+.cbub{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:10px;font-size:12px;line-height:1.7;color:var(--text2);}
+.ch{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--green);margin-bottom:8px;}
+.ci{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.ci:last-child{border-bottom:none;}
+.cdot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.ctext{font-size:12px;color:var(--text2);line-height:1.6;}
+.clabel{font-size:10px;color:var(--text3);margin-top:2px;}
+.tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:10px 0;}
+.tbtn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 5px;text-align:center;cursor:pointer;transition:all .15s;}
+.tbtn.active{background:var(--gdim);border-color:rgba(111,207,122,.3);color:var(--green);}
+.tv{font-family:'Fraunces',serif;font-size:17px;font-weight:300;}
+.tl{font-size:9px;color:var(--text3);margin-top:1px;}
+/* Week badge */
+.wbadge{background:var(--gdim);color:var(--green);border:1px solid rgba(111,207,122,.2);padding:4px 9px;border-radius:16px;font-size:11px;}
+/* Misc */
+.chart-wrap{position:relative;}
+.empty{text-align:center;padding:28px 16px;color:var(--text3);font-size:12px;}
+.ei{font-size:22px;margin-bottom:6px;opacity:.4;}
+.toast{position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg2);border:1px solid rgba(111,207,122,.3);color:var(--green);padding:9px 18px;border-radius:16px;font-size:12px;opacity:0;transition:all .25s;z-index:999;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+@media(min-width:768px){.toast{bottom:22px;}}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- DESKTOP SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">fit<span>.</span>track</div>
+  <div class="nav">
+    <div class="nav-sec">Übersicht</div>
+    <div class="nav-item active" onclick="go('dashboard')"><span class="nav-icon">◈</span>Dashboard</div>
+    <div class="nav-sec">Tracking</div>
+    <div class="nav-item" onclick="go('lauf')"><span class="nav-icon">⟳</span>Laufen</div>
+    <div class="nav-item" onclick="go('kraft')"><span class="nav-icon">◻</span>Kraft</div>
+    <div class="nav-item" onclick="go('koerper')"><span class="nav-icon">◉</span>Körper & Schlaf</div>
+    <div class="nav-sec">Tools</div>
+    <div class="nav-item" onclick="go('import')"><span class="nav-icon">↓</span>CSV Import</div>
+    <div class="nav-item" onclick="go('coach')"><span class="nav-icon">✦</span>KI-Coach</div>
+    <div class="nav-item" onclick="go('analyse')"><span class="nav-icon">⌇</span>Analyse</div>
+  </div>
+  <div class="sb-foot">Daten lokal im Browser</div>
+</nav>
+
+<!-- MOBILE HEADER -->
+<div class="mob-header">
+  <div>
+    <div class="mob-title">fit<span style="color:var(--green)">.</span>track</div>
+    <div class="mob-sub" id="mob-sub">Dashboard</div>
+  </div>
+  <div class="wbadge" id="kwmob">KW —</div>
+</div>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="ph"><div><h1 class="pt">Dashboard</h1><p class="ps">Dein Überblick</p></div><div class="wbadge" id="kw-desk">KW —</div></div>
+  <div class="kpi-grid">
+    <div class="kc"><div class="kl">Wochenkilometer</div><div class="kv" id="kpi-km">—<span class="ku">km</span></div><div class="kd n" id="kpi-km-d">Diese Woche</div></div>
+    <div class="kc"><div class="kl">Einheiten</div><div class="kv" id="kpi-s">—</div><div class="kd n" id="kpi-s-d">Diese Woche</div></div>
+    <div class="kc"><div class="kl">Ø Schlaf</div><div class="kv" id="kpi-sl">—<span class="ku">h</span></div><div class="kd n" id="kpi-sl-d">Diese Woche</div></div>
+    <div class="kc"><div class="kl">Gewicht</div><div class="kv" id="kpi-w">—<span class="ku">kg</span></div><div class="kd n" id="kpi-w-d">Letzter Eintrag</div></div>
+  </div>
+  <div class="g2 sec">
+    <div class="card">
+      <div class="ct">Wochenplan</div>
+      <div class="wdots" id="wdots"></div>
+      <div class="pr"><div class="pl">Laufen</div><div class="pt2"><div class="pf" id="prl" style="background:var(--green);width:0%"></div></div><div class="pv" id="prv-l">0/3</div></div>
+      <div class="pr"><div class="pl">Kraft</div><div class="pt2"><div class="pf" id="prk" style="background:var(--blue);width:0%"></div></div><div class="pv" id="prv-k">0/3</div></div>
+      <div class="pr"><div class="pl">Mobility</div><div class="pt2"><div class="pf" id="prm" style="background:var(--amber);width:0%"></div></div><div class="pv" id="prv-m">0/2</div></div>
+    </div>
+    <div class="card"><div class="ct">Schlaf diese Woche</div><div id="sl-bars"><div class="empty"><div class="ei">💤</div>Noch keine Schlafdaten</div></div></div>
+  </div>
+  <div class="sec"><div class="st">Pace-Entwicklung</div><div class="card"><div class="chart-wrap" style="height:140px"><canvas id="c-pace-d"></canvas></div></div></div>
+</div>
+
+<!-- LAUFEN -->
+<div class="page" id="page-lauf">
+  <div class="ph"><div><h1 class="pt">Laufen</h1><p class="ps">Einheit erfassen</p></div></div>
+  <div class="tabs"><div class="tab active" onclick="stab('lauf','m')">Manuell</div><div class="tab" onclick="stab('lauf','h')">Verlauf</div></div>
+  <div id="lt-m">
+    <div class="fg" style="margin-bottom:10px">
+      <div class="fgroup"><label class="fl">Datum</label><input class="fi" type="date" id="l-dat"></div>
+      <div class="fgroup"><label class="fl">Typ</label><select class="fs" id="l-typ"><option>Locker</option><option>Intervall</option><option>Langer Lauf</option><option>Wettkampf</option><option>Mobility</option></select></div>
+      <div class="fgroup"><label class="fl">Distanz (km)</label><input class="fi" type="number" step="0.1" placeholder="10.5" id="l-dist"></div>
+      <div class="fgroup"><label class="fl">Pace (min/km)</label><input class="fi" type="number" step="0.01" placeholder="5.25" id="l-pace"></div>
+      <div class="fgroup"><label class="fl">Herzfrequenz Ø</label><input class="fi" type="number" placeholder="145" id="l-hf"></div>
+      <div class="fgroup"><label class="fl">Gefühl (1–5)</label><select class="fs" id="l-gef"><option value="5">5 – Super</option><option value="4" selected>4 – Gut</option><option value="3">3 – Ok</option><option value="2">2 – Schwer</option><option value="1">1 – Schlecht</option></select></div>
+      <div class="fgroup full"><label class="fl">Notizen</label><textarea class="fta" placeholder="Strecke, Wetter, Intervalle..." id="l-not"></textarea></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-p" onclick="saveLauf()">Speichern</button><button class="btn btn-s" onclick="clr('l')">Leeren</button></div>
+  </div>
+  <div id="lt-h" style="display:none"><div id="l-list"></div></div>
+</div>
+
+<!-- KRAFT -->
+<div class="page" id="page-kraft">
+  <div class="ph"><div><h1 class="pt">Krafttraining</h1><p class="ps">Session erfassen</p></div></div>
+  <div class="tabs"><div class="tab active" onclick="stab('kraft','m')">Manuell</div><div class="tab" onclick="stab('kraft','h')">Verlauf</div></div>
+  <div id="kt-m">
+    <div class="fg" style="margin-bottom:10px">
+      <div class="fgroup"><label class="fl">Datum</label><input class="fi" type="date" id="k-dat"></div>
+      <div class="fgroup"><label class="fl">Typ</label><select class="fs" id="k-typ"><option>Push</option><option>Pull</option><option>Legs</option><option>Upper</option><option>Lower</option><option>Fullbody</option></select></div>
+      <div class="fgroup"><label class="fl">Volumen (kg)</label><input class="fi" type="number" placeholder="8500" id="k-vol"></div>
+      <div class="fgroup"><label class="fl">Dauer (min)</label><input class="fi" type="number" placeholder="65" id="k-dur"></div>
+      <div class="fgroup full"><label class="fl">Hauptübung + bestes Set</label><input class="fi" placeholder="Bankdrücken 85kg × 5" id="k-ueb"></div>
+      <div class="fgroup"><label class="fl">Gefühl (1–5)</label><select class="fs" id="k-gef"><option value="5">5 – Super</option><option value="4" selected>4 – Gut</option><option value="3">3 – Ok</option><option value="2">2 – Schwer</option><option value="1">1 – Schlecht</option></select></div>
+      <div class="fgroup"><label class="fl">Plan eingehalten?</label><select class="fs" id="k-plan"><option value="ja">Ja ✓</option><option value="teilweise">Teilweise</option><option value="nein">Nein</option></select></div>
+      <div class="fgroup full"><label class="fl">Notizen</label><textarea class="fta" placeholder="Übungen, Gewichte..." id="k-not"></textarea></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-p" onclick="saveKraft()">Speichern</button><button class="btn btn-s" onclick="clr('k')">Leeren</button></div>
+  </div>
+  <div id="kt-h" style="display:none"><div id="k-list"></div></div>
+</div>
+
+<!-- KÖRPER & SCHLAF -->
+<div class="page" id="page-koerper">
+  <div class="ph"><div><h1 class="pt">Körper & Schlaf</h1><p class="ps">Tägliche Messung</p></div></div>
+  <div class="fg" style="margin-bottom:10px">
+    <div class="fgroup"><label class="fl">Datum</label><input class="fi" type="date" id="b-dat"></div>
+    <div class="fgroup"><label class="fl">Gewicht (kg)</label><input class="fi" type="number" step="0.1" placeholder="78.5" id="b-gew"></div>
+    <div class="fgroup"><label class="fl">Schlaf (h)</label><input class="fi" type="number" step="0.5" placeholder="7.5" id="b-schl"></div>
+    <div class="fgroup"><label class="fl">Schlafqualität (1–5)</label><select class="fs" id="b-schlq"><option value="5">5 – Sehr gut</option><option value="4" selected>4 – Gut</option><option value="3">3 – Ok</option><option value="2">2 – Schlecht</option><option value="1">1 – Sehr schlecht</option></select></div>
+    <div class="fgroup"><label class="fl">Energie-Level (1–5)</label><select class="fs" id="b-en"><option value="5">5 – Top</option><option value="4" selected>4 – Gut</option><option value="3">3 – Ok</option><option value="2">2 – Müde</option><option value="1">1 – Kaputt</option></select></div>
+    <div class="fgroup full"><label class="fl">Notizen</label><textarea class="fta" placeholder="Krank, Stress..." id="b-not"></textarea></div>
+  </div>
+  <div class="btn-row" style="margin-bottom:18px"><button class="btn btn-p" onclick="saveBody()">Speichern</button><button class="btn btn-s" onclick="clr('b')">Leeren</button></div>
+  <div class="st">Gewichtstrend</div>
+  <div class="card sec"><div class="chart-wrap" style="height:120px"><canvas id="c-weight"></canvas></div></div>
+  <div class="st">Letzte Einträge</div>
+  <div id="b-list"></div>
+</div>
+
+<!-- CSV IMPORT -->
+<div class="page" id="page-import">
+  <div class="ph"><div><h1 class="pt">CSV Import</h1><p class="ps">Daten aus deinen Apps importieren</p></div></div>
+  <div class="tabs">
+    <div class="tab active" onclick="stab('import','polar')">Polar Flow</div>
+    <div class="tab" onclick="stab('import','adidas')">Adidas Running</div>
+    <div class="tab" onclick="stab('import','alpha')">Alpha Progression</div>
+  </div>
+  <!-- POLAR -->
+  <div id="it-polar">
+    <div class="card" style="margin-bottom:12px">
+      <div class="ct">Export aus Polar Flow</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+        1. Öffne <strong style="color:var(--text)">flow.polar.com</strong> im Browser<br>
+        2. Klick auf eine Aktivität → <strong style="color:var(--text)">Export → CSV</strong><br>
+        3. Oder: Profil → <strong style="color:var(--text)">Daten exportieren</strong> (alle Aktivitäten)<br>
+        <span style="color:var(--text3);font-size:10px;display:block;margin-top:4px">Spalten: Date, Distance (km), Duration, Average heart rate</span>
+      </div>
+    </div>
+    <div class="ibox" onclick="tf('polar')" id="ib-polar"><input type="file" id="if-polar" accept=".csv" onchange="hf(this,'polar')"><div class="iicon">📂</div><div class="it">Polar CSV auswählen oder ablegen</div><div class="is">Spalten werden automatisch erkannt</div></div>
+    <div id="ip-polar"></div><div id="ibtn-polar"></div>
+  </div>
+  <!-- ADIDAS -->
+  <div id="it-adidas" style="display:none">
+    <div class="card" style="margin-bottom:12px">
+      <div class="ct">Export aus Adidas Running</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+        1. Öffne die <strong style="color:var(--text)">Adidas Running App</strong><br>
+        2. Profil → <strong style="color:var(--text)">Einstellungen → Daten exportieren</strong><br>
+        3. Du bekommst eine E-Mail mit ZIP → CSV entpacken<br>
+        <span style="color:var(--text3);font-size:10px;display:block;margin-top:4px">Spalten: date, distance (m), duration (s) — wird automatisch umgerechnet</span>
+      </div>
+    </div>
+    <div class="ibox" onclick="tf('adidas')" id="ib-adidas"><input type="file" id="if-adidas" accept=".csv" onchange="hf(this,'adidas')"><div class="iicon">📂</div><div class="it">Adidas Running CSV auswählen</div><div class="is">Meter → km und Sekunden → Pace werden umgerechnet</div></div>
+    <div id="ip-adidas"></div><div id="ibtn-adidas"></div>
+  </div>
+  <!-- ALPHA -->
+  <div id="it-alpha" style="display:none">
+    <div class="card" style="margin-bottom:12px">
+      <div class="ct">Export aus Alpha Progression</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.9">
+        1. Öffne <strong style="color:var(--text)">Alpha Progression</strong><br>
+        2. Profil (unten rechts) → <strong style="color:var(--text)">Export → Workouts als CSV</strong><br>
+        <span style="color:var(--text3);font-size:10px;display:block;margin-top:4px">Spalten: Date, Exercise, Sets, Reps, Weight — Volumen wird berechnet</span>
+      </div>
+    </div>
+    <div class="ibox" onclick="tf('alpha')" id="ib-alpha"><input type="file" id="if-alpha" accept=".csv" onchange="hf(this,'alpha')"><div class="iicon">📂</div><div class="it">Alpha Progression CSV auswählen</div><div class="is">Sessions werden nach Datum gruppiert</div></div>
+    <div id="ip-alpha"></div><div id="ibtn-alpha"></div>
+  </div>
+</div>
+
+<!-- KI COACH -->
+<div class="page" id="page-coach">
+  <div class="ph"><div><h1 class="pt">KI-Coach</h1><p class="ps">Empfehlung basierend auf deinen Daten</p></div></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="ct">Wie viel Zeit hast du heute?</div>
+    <div class="tgrid">
+      <div class="tbtn" onclick="selT(20)"><div class="tv">20</div><div class="tl">Minuten</div></div>
+      <div class="tbtn" onclick="selT(45)"><div class="tv">45</div><div class="tl">Minuten</div></div>
+      <div class="tbtn" onclick="selT(60)"><div class="tv">60</div><div class="tl">Minuten</div></div>
+      <div class="tbtn" onclick="selT(90)"><div class="tv">90</div><div class="tl">Minuten</div></div>
+    </div>
+    <button class="btn btn-p btn-w" onclick="genCoach()">Empfehlung generieren</button>
+  </div>
+  <div id="coach-out"></div>
+</div>
+
+<!-- ANALYSE -->
+<div class="page" id="page-analyse">
+  <div class="ph"><div><h1 class="pt">Analyse</h1><p class="ps">Langzeit-Entwicklung</p></div></div>
+  <div class="sec"><div class="st">Pace-Entwicklung</div><div class="card"><div class="chart-wrap" style="height:170px"><canvas id="c-pace-f"></canvas></div></div></div>
+  <div class="g2 sec">
+    <div><div class="st">Kraftvolumen</div><div class="card"><div class="chart-wrap" style="height:150px"><canvas id="c-kvol"></canvas></div></div></div>
+    <div><div class="st">Wochenkilometer</div><div class="card"><div class="chart-wrap" style="height:150px"><canvas id="c-wkm"></canvas></div></div></div>
+  </div>
+  <div class="sec"><div class="st">Schlaf vs. Energie</div><div class="card"><div class="chart-wrap" style="height:150px"><canvas id="c-sl-en"></canvas></div></div></div>
+</div>
+
+</main>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-nav">
+  <div class="mob-item active" onclick="go('dashboard')"><div class="mob-icon">◈</div>Home</div>
+  <div class="mob-item" onclick="go('lauf')"><div class="mob-icon">⟳</div>Laufen</div>
+  <div class="mob-item" onclick="go('kraft')"><div class="mob-icon">◻</div>Kraft</div>
+  <div class="mob-item" onclick="go('coach')"><div class="mob-icon">✦</div>Coach</div>
+  <div class="mob-item" onclick="go('import')"><div class="mob-icon">↓</div>Import</div>
+</nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DB={get:k=>JSON.parse(localStorage.getItem('ft_'+k)||'[]'),set:(k,v)=>localStorage.setItem('ft_'+k,JSON.stringify(v)),add:(k,v)=>{const a=DB.get(k);a.unshift(v);DB.set(k,a);}};
+function today(){return new Date().toISOString().split('T')[0];}
+function getKW(d){const dt=new Date(d);dt.setHours(12);dt.setDate(dt.getDate()+4-(dt.getDay()||7));const y=new Date(dt.getFullYear(),0,1);return Math.ceil((((dt-y)/86400000)+1)/7);}
+function weekDates(){const n=new Date(),dw=n.getDay()||7,m=new Date(n);m.setDate(n.getDate()-(dw-1));return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return d.toISOString().split('T')[0];});}
+function ps(v){if(!v||v<=0)return'—';const m=Math.floor(v),s=Math.round((v-m)*60);return m+':'+(s<10?'0':'')+s;}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function parseCSV(txt){const ln=txt.trim().split(/\r?\n/),hdr=ln[0].split(/[,;]/).map(h=>h.trim().toLowerCase().replace(/"/g,''));return ln.slice(1).filter(l=>l.trim()).map(l=>{const v=l.match(/(".*?"|[^,;\n]+)/g)||[],o={};hdr.forEach((h,i)=>o[h]=(v[i]||'').replace(/"/g,'').trim());return o;});}
+
+const LABELS={dashboard:'Dashboard',lauf:'Laufen',kraft:'Krafttraining',koerper:'Körper & Schlaf',import:'CSV Import',coach:'KI-Coach',analyse:'Analyse'};
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item,.mob-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item,.mob-item').forEach(n=>{if(n.getAttribute('onclick')?.includes("'"+id+"'"))n.classList.add('active');});
+  document.getElementById('mob-sub').textContent=LABELS[id]||id;
+  window.scrollTo(0,0);
+  if(id==='dashboard')updDash();
+  if(id==='analyse')updAnalyse();
+  if(id==='koerper'){updList('b');renderWChart();}
+  if(id==='lauf')updList('l');
+  if(id==='kraft')updList('k');
+  if(id==='coach')genCoach();
+}
+function stab(page,tab){
+  const map={lauf:{m:'lt-m',h:'lt-h'},kraft:{m:'kt-m',h:'kt-h'},import:{polar:'it-polar',adidas:'it-adidas',alpha:'it-alpha'}};
+  const all=Object.values(map[page]||{});
+  all.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  const show=map[page]?.[tab];
+  if(show){const el=document.getElementById(show);if(el)el.style.display='block';}
+  document.querySelectorAll(`#page-${page} .tab`).forEach(t=>{t.classList.toggle('active',t.getAttribute('onclick')?.includes("'"+tab+"'"));});
+  if(tab==='h'){updList(page==='lauf'?'l':page==='kraft'?'k':'b');if(page==='koerper')renderWChart();}
+}
+
+function saveLauf(){DB.add('lauf',{datum:document.getElementById('l-dat').value||today(),typ:document.getElementById('l-typ').value,distanz:parseFloat(document.getElementById('l-dist').value)||0,pace:parseFloat(document.getElementById('l-pace').value)||0,hf:parseInt(document.getElementById('l-hf').value)||0,gefuehl:parseInt(document.getElementById('l-gef').value)||4,notiz:document.getElementById('l-not').value,ts:Date.now()});toast('Laufeinheit gespeichert ✓');updList('l');}
+function saveKraft(){DB.add('kraft',{datum:document.getElementById('k-dat').value||today(),typ:document.getElementById('k-typ').value,volumen:parseInt(document.getElementById('k-vol').value)||0,dauer:parseInt(document.getElementById('k-dur').value)||0,hauptuebung:document.getElementById('k-ueb').value,gefuehl:parseInt(document.getElementById('k-gef').value)||4,plan:document.getElementById('k-plan').value,notiz:document.getElementById('k-not').value,ts:Date.now()});toast('Session gespeichert ✓');updList('k');}
+function saveBody(){DB.add('koerper',{datum:document.getElementById('b-dat').value||today(),gewicht:parseFloat(document.getElementById('b-gew').value)||0,schlaf:parseFloat(document.getElementById('b-schl').value)||0,schlafq:parseInt(document.getElementById('b-schlq').value)||4,energie:parseInt(document.getElementById('b-en').value)||4,notiz:document.getElementById('b-not').value,ts:Date.now()});toast('Eintrag gespeichert ✓');updList('b');renderWChart();}
+function clr(p){const map={l:['l-dat','l-dist','l-pace','l-hf','l-not'],k:['k-dat','k-vol','k-dur','k-ueb','k-not'],b:['b-dat','b-gew','b-schl','b-not']};(map[p]||[]).forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
+
+function updList(type){
+  const idmap={l:'l-list',k:'k-list',b:'b-list'};
+  const el=document.getElementById(idmap[type]);if(!el)return;
+  const key={l:'lauf',k:'kraft',b:'koerper'}[type];
+  const data=DB.get(key).slice(0,20);
+  if(!data.length){el.innerHTML='<div class="empty"><div class="ei">📋</div>Noch keine Einträge</div>';return;}
+  if(type==='l')el.innerHTML='<table class="dt"><thead><tr><th>Datum</th><th>Typ</th><th>km</th><th>Pace</th></tr></thead><tbody>'+data.map(e=>`<tr><td>${e.datum}</td><td><span class="tag ${e.typ==='Intervall'?'ta':e.typ==='Langer Lauf'?'tb':'tg'}">${e.typ}</span></td><td>${e.distanz||'—'}</td><td>${ps(e.pace)}</td></tr>`).join('')+'</tbody></table>';
+  else if(type==='k')el.innerHTML='<table class="dt"><thead><tr><th>Datum</th><th>Typ</th><th>Volumen</th><th>Min</th></tr></thead><tbody>'+data.map(e=>`<tr><td>${e.datum}</td><td><span class="tag tb">${e.typ}</span></td><td>${e.volumen?e.volumen.toLocaleString()+'kg':'—'}</td><td>${e.dauer||'—'}</td></tr>`).join('')+'</tbody></table>';
+  else el.innerHTML='<table class="dt"><thead><tr><th>Datum</th><th>Gewicht</th><th>Schlaf</th><th>⚡</th></tr></thead><tbody>'+data.map(e=>`<tr><td>${e.datum}</td><td>${e.gewicht?e.gewicht+'kg':'—'}</td><td>${e.schlaf?e.schlaf+'h':'—'}</td><td>${e.energie||'—'}/5</td></tr>`).join('')+'</tbody></table>';
+}
+
+function updDash(){
+  const kw=getKW(today());
+  document.getElementById('kw-desk').textContent='KW '+kw;
+  document.getElementById('kwmob').textContent='KW '+kw;
+  const wk=weekDates(),lauf=DB.get('lauf'),kraft=DB.get('kraft'),koer=DB.get('koerper');
+  const tl=lauf.filter(e=>wk.includes(e.datum)&&e.typ!=='Mobility'),tk=kraft.filter(e=>wk.includes(e.datum));
+  const km=tl.reduce((s,e)=>s+e.distanz,0);
+  document.getElementById('kpi-km').innerHTML=km.toFixed(1)+'<span class="ku">km</span>';
+  document.getElementById('kpi-s').innerHTML=tl.length+tk.length;
+  document.getElementById('kpi-s-d').textContent=tl.length+' Lauf · '+tk.length+' Kraft';
+  const sw=koer.filter(e=>wk.includes(e.datum)&&e.schlaf>0);
+  if(sw.length){const avg=sw.reduce((s,e)=>s+e.schlaf,0)/sw.length;document.getElementById('kpi-sl').innerHTML=avg.toFixed(1)+'<span class="ku">h</span>';const el=document.getElementById('kpi-sl-d');el.className='kd '+(avg>=7?'up':avg>=6?'n':'down');el.textContent=avg>=7?'Gut geschlafen':avg>=6?'Ok':'Zu wenig';}
+  const lw=koer.find(e=>e.gewicht>0);if(lw)document.getElementById('kpi-w').innerHTML=lw.gewicht+'<span class="ku">kg</span>';
+  const days=['Mo','Di','Mi','Do','Fr','Sa','So'],tod=today();
+  document.getElementById('wdots').innerHTML=wk.map((d,i)=>{const hl=lauf.some(e=>e.datum===d),hk=kraft.some(e=>e.datum===d),isT=d===tod;const cls=hl||hk?'done':isT?'today':'rest';const sub=hl&&hk?'L+K':hl?'L':hk?'K':isT?'●':'—';return`<div class="di"><div class="dd ${cls}">${days[i]}</div><div class="dl">${sub}</div></div>`;}).join('');
+  const lc=tl.length,kc=tk.length,mc=lauf.filter(e=>wk.includes(e.datum)&&e.typ==='Mobility').length;
+  document.getElementById('prl').style.width=Math.min(lc/3*100,100)+'%';document.getElementById('prv-l').textContent=lc+'/3';
+  document.getElementById('prk').style.width=Math.min(kc/3*100,100)+'%';document.getElementById('prv-k').textContent=kc+'/3';
+  document.getElementById('prm').style.width=Math.min(mc/2*100,100)+'%';document.getElementById('prv-m').textContent=mc+'/2';
+  const slEl=document.getElementById('sl-bars');
+  if(wk.some(d=>koer.find(e=>e.datum===d))){slEl.innerHTML=wk.map((d,i)=>{const e=koer.find(x=>x.datum===d);const h=e?.schlaf||0,pct=Math.min(h/9*100,100),col=h>=7?'var(--green)':h>=6?'var(--amber)':'var(--red)';return`<div class="sr"><div class="sd">${days[i]}</div><div class="sbt"><div class="sbf" style="width:${pct}%;background:${col}"></div></div><div class="sv">${h?h+'h':'—'}</div><div class="se">${e?.energie?'⚡'+e.energie:''}</div></div>`;}).join('');}
+  else{slEl.innerHTML='<div class="empty"><div class="ei">💤</div>Noch keine Schlafdaten</div>';}
+  renderPaceChart('c-pace-d',DB.get('lauf').filter(e=>e.pace>0&&e.typ!=='Mobility').slice(0,8).reverse());
+}
+
+const CH={};
+function dC(id){if(CH[id]){CH[id].destroy();delete CH[id];}}
+const cd={plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#555450',font:{size:9,family:"'DM Mono',monospace"},maxRotation:0},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#555450',font:{size:9,family:"'DM Mono',monospace"}},grid:{color:'rgba(255,255,255,0.04)'}}},responsive:true,maintainAspectRatio:false};
+function renderPaceChart(id,data){dC(id);if(!data.length||!document.getElementById(id))return;CH[id]=new Chart(document.getElementById(id),{type:'line',data:{labels:data.map(e=>e.datum.slice(5)),datasets:[{data:data.map(e=>e.pace),borderColor:'#6fcf7a',backgroundColor:'rgba(111,207,122,0.06)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#6fcf7a',tension:0.35,fill:true}]},options:{...cd,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>ps(c.raw)+'/km'}}},scales:{...cd.scales,y:{...cd.scales.y,reverse:true,ticks:{...cd.scales.y.ticks,callback:v=>ps(v)}}}}});}
+function renderWChart(){const data=DB.get('koerper').filter(e=>e.gewicht>0).slice(0,20).reverse();dC('c-weight');if(!data.length||!document.getElementById('c-weight'))return;CH['c-weight']=new Chart(document.getElementById('c-weight'),{type:'line',data:{labels:data.map(e=>e.datum.slice(5)),datasets:[{data:data.map(e=>e.gewicht),borderColor:'#e8a84a',backgroundColor:'rgba(232,168,74,0.06)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#e8a84a',tension:0.35,fill:true}]},options:{...cd,scales:{...cd.scales,y:{...cd.scales.y,ticks:{...cd.scales.y.ticks,callback:v=>v+'kg'}}}}});}
+function updAnalyse(){
+  const ld=DB.get('lauf').filter(e=>e.pace>0&&e.typ!=='Mobility').slice(0,30).reverse();
+  const kd=DB.get('kraft').filter(e=>e.volumen>0).slice(0,14).reverse();
+  const bd=DB.get('koerper');
+  dC('c-pace-f');if(ld.length&&document.getElementById('c-pace-f'))CH['c-pace-f']=new Chart(document.getElementById('c-pace-f'),{type:'line',data:{labels:ld.map(e=>e.datum.slice(5)),datasets:[{label:'Locker',data:ld.map(e=>e.typ==='Locker'?e.pace:null),borderColor:'#6fcf7a',borderWidth:2,pointRadius:2,tension:0.35,fill:false,spanGaps:false},{label:'Intervall',data:ld.map(e=>e.typ==='Intervall'?e.pace:null),borderColor:'#e8a84a',borderWidth:2,pointRadius:2,tension:0.35,fill:false,spanGaps:false}]},options:{...cd,plugins:{legend:{display:true,labels:{color:'#8a887f',font:{size:9},boxWidth:8,boxHeight:2}},tooltip:{callbacks:{label:c=>ps(c.raw)+'/km'}}},scales:{...cd.scales,y:{...cd.scales.y,reverse:true,ticks:{...cd.scales.y.ticks,callback:v=>ps(v)}}}}});
+  dC('c-kvol');if(kd.length&&document.getElementById('c-kvol'))CH['c-kvol']=new Chart(document.getElementById('c-kvol'),{type:'bar',data:{labels:kd.map(e=>e.datum.slice(5)),datasets:[{data:kd.map(e=>e.volumen),backgroundColor:'rgba(111,168,232,0.45)',borderColor:'#6fa8e8',borderWidth:1}]},options:{...cd,scales:{...cd.scales,y:{...cd.scales.y,ticks:{...cd.scales.y.ticks,callback:v=>(v/1000).toFixed(1)+'t'}}}}});
+  const wkm={};DB.get('lauf').filter(e=>e.typ!=='Mobility').forEach(e=>{const k='KW'+getKW(e.datum);wkm[k]=(wkm[k]||0)+e.distanz;});const kwk=Object.keys(wkm).slice(-10);
+  dC('c-wkm');if(kwk.length&&document.getElementById('c-wkm'))CH['c-wkm']=new Chart(document.getElementById('c-wkm'),{type:'bar',data:{labels:kwk,datasets:[{data:kwk.map(k=>+wkm[k].toFixed(1)),backgroundColor:'rgba(111,207,122,0.4)',borderColor:'#6fcf7a',borderWidth:1}]},options:{...cd,scales:{...cd.scales,y:{...cd.scales.y,ticks:{...cd.scales.y.ticks,callback:v=>v+'km'}}}}});
+  const sed=bd.filter(e=>e.schlaf>0&&e.energie>0).slice(0,20).reverse();
+  dC('c-sl-en');if(sed.length&&document.getElementById('c-sl-en'))CH['c-sl-en']=new Chart(document.getElementById('c-sl-en'),{type:'line',data:{labels:sed.map(e=>e.datum.slice(5)),datasets:[{label:'Schlaf (h)',data:sed.map(e=>e.schlaf),borderColor:'#6fa8e8',borderWidth:2,pointRadius:2,tension:0.35,fill:false,yAxisID:'y'},{label:'Energie',data:sed.map(e=>e.energie),borderColor:'#e8a84a',borderWidth:2,pointRadius:2,tension:0.35,fill:false,yAxisID:'y1'}]},options:{...cd,plugins:{legend:{display:true,labels:{color:'#8a887f',font:{size:9},boxWidth:8,boxHeight:2}}},scales:{x:{...cd.scales.x},y:{...cd.scales.y,position:'left',ticks:{...cd.scales.y.ticks,callback:v=>v+'h'}},y1:{...cd.scales.y,position:'right',min:1,max:5,grid:{display:false},ticks:{...cd.scales.y.ticks,callback:v=>v+'/5'}}}}});
+}
+
+// CSV IMPORT
+const impData={};
+function tf(t){document.getElementById('if-'+t).click();}
+function hf(input,type){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const rows=parseCSV(e.target.result);if(!rows.length){toast('CSV leer oder ungültig');return;}
+    let parsed=[];
+    if(type==='polar')parsed=parsePolar(rows);
+    else if(type==='adidas')parsed=parseAdidas(rows);
+    else if(type==='alpha')parsed=parseAlpha(rows);
+    impData[type]=parsed;showPrev(type,parsed);
+  };
+  r.readAsText(file);
+}
+function parsePolar(rows){return rows.map(r=>{const datum=(r['date']||r['datum']||r['start date']||'').slice(0,10);const dR=parseFloat(r['distance (km)']||r['distance']||r['distanz']||0);const dist=dR>0&&dR<5000?dR:dR/1000;const durS=r['duration']||r['dauer']||'';const hf=parseInt(r['average heart rate (bpm)']||r['average heart rate']||0);let pace=0;if(durS&&dist>0){const p=durS.split(':').map(Number);const tm=p.length===3?p[0]*60+p[1]+p[2]/60:p[0]+p[1]/60;pace=parseFloat((tm/dist).toFixed(2));}const sp=(r['sport']||'').toLowerCase();const typ=sp.includes('interval')?'Intervall':sp.includes('long')?'Langer Lauf':'Locker';return{datum,distanz:parseFloat(dist.toFixed(2)),pace,hf,typ,gefuehl:4,notiz:'Import: Polar Flow',ts:Date.now()};}).filter(e=>e.datum&&e.distanz>0);}
+function parseAdidas(rows){return rows.map(r=>{const datum=(r['date']||r['start_time']||'').slice(0,10);const dm=parseFloat(r['distance']||0);const dist=dm>500?dm/1000:dm;const ds=parseFloat(r['duration']||0);let pace=0;if(ds>0&&dist>0)pace=parseFloat(((ds/60)/dist).toFixed(2));const hf=parseInt(r['average_heartrate']||r['avg_heartrate']||0);return{datum,distanz:parseFloat(dist.toFixed(2)),pace,hf,typ:'Locker',gefuehl:4,notiz:'Import: Adidas Running',ts:Date.now()};}).filter(e=>e.datum&&e.distanz>0);}
+function parseAlpha(rows){const sess={};rows.forEach(r=>{const datum=(r['date']||r['datum']||'').slice(0,10);if(!datum)return;if(!sess[datum])sess[datum]={datum,volumen:0,uebungen:[],typ:'Fullbody',gefuehl:4,notiz:'Import: Alpha Progression',ts:Date.now()};const sets=parseInt(r['sets']||1),reps=parseInt(r['reps']||1),weight=parseFloat(r['weight (kg)']||r['weight']||0);sess[datum].volumen+=sets*reps*weight;const ex=r['exercise']||r['exercise name']||'';if(ex&&!sess[datum].uebungen.includes(ex))sess[datum].uebungen.push(ex);});return Object.values(sess).map(s=>({...s,hauptuebung:s.uebungen.slice(0,2).join(', '),volumen:Math.round(s.volumen),dauer:60}));}
+function showPrev(type,data){
+  const pEl=document.getElementById('ip-'+type),bEl=document.getElementById('ibtn-'+type);
+  if(!data.length){pEl.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px">Keine verwertbaren Zeilen. Spaltenformat prüfen.</div>';return;}
+  const isL=type!=='alpha';
+  const hdr=isL?['Datum','Typ','km','Pace']:['Datum','Übungen','Volumen'];
+  const rws=data.slice(0,5).map(e=>isL?`<tr><td>${e.datum}</td><td>${e.typ}</td><td>${e.distanz}</td><td>${ps(e.pace)}</td></tr>`:`<tr><td>${e.datum}</td><td style="max-width:110px;overflow:hidden;text-overflow:ellipsis">${e.hauptuebung}</td><td>${e.volumen?.toLocaleString()}kg</td></tr>`);
+  pEl.innerHTML=`<div class="iprev"><strong style="color:var(--text2)">${data.length} Einträge erkannt</strong><table style="margin-top:7px"><thead><tr>${hdr.map(h=>'<th>'+h+'</th>').join('')}</tr></thead><tbody>${rws.join('')}</tbody></table>${data.length>5?`<div style="color:var(--text3);margin-top:5px">... +${data.length-5} weitere</div>`:''}</div>`;
+  bEl.innerHTML=`<div class="btn-row" style="margin-top:8px"><button class="btn btn-p" onclick="doImp('${type}')">Alle ${data.length} importieren</button></div>`;
+}
+function doImp(type){
+  const data=impData[type];if(!data||!data.length)return;
+  const key=type==='alpha'?'kraft':'lauf';
+  const existing=DB.get(key);const ed=new Set(existing.map(e=>e.datum));
+  let added=0,skipped=0;
+  data.forEach(e=>{if(ed.has(e.datum)){skipped++;return;}DB.add(key,e);added++;});
+  toast(`${added} importiert${skipped?', '+skipped+' übersprungen':''} ✓`);
+  impData[type]=[];
+  document.getElementById('ip-'+type).innerHTML='';
+  document.getElementById('ibtn-'+type).innerHTML=`<div style="color:var(--green);font-size:12px;padding:6px 0">✓ Import abgeschlossen</div>`;
+}
+
+// COACH
+let selTime=45;
+function selT(t){selTime=t;document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick')===`selT(${t})`));}
+document.querySelector('.tbtn[onclick="selT(45)"]').classList.add('active');
+function genCoach(){
+  const lauf=DB.get('lauf'),kraft=DB.get('kraft'),koer=DB.get('koerper');
+  const wk=weekDates(),tod=today();
+  const tl=lauf.filter(e=>wk.includes(e.datum)&&e.typ!=='Mobility');
+  const tk=kraft.filter(e=>wk.includes(e.datum));
+  const last=koer[0];
+  const trainedToday=lauf.some(e=>e.datum===tod)||kraft.some(e=>e.datum===tod);
+  const ls=last?.schlaf||0,le=last?.energie||3;
+  const t=selTime,lc=tl.length,kc=tk.length;
+  const recP=lauf.slice(0,5).filter(e=>e.pace>0);
+  const avgPace=recP.length?recP.reduce((s,e)=>s+e.pace,0)/recP.length:5.3;
+  const recs=[];
+  if(trainedToday)recs.push({c:'var(--amber)',title:'Heute bereits trainiert',text:'Heute schon aktiv! Leichte Mobility oder vollständige Pause wäre optimal für die Regeneration.',label:'Regeneration'});
+  if(ls>0&&ls<6.5)recs.push({c:'var(--red)',title:`Nur ${ls}h Schlaf — vorsichtig sein`,text:'Mit zu wenig Schlaf ist intensives Training kontraproduktiv und erhöht das Verletzungsrisiko. Heute eher Spaziergang oder Dehnen.',label:'Warnung'});
+  if(!trainedToday){
+    if(kc<2&&t>=45){const typ=kc===0?'Push (Brust, Schultern, Trizeps)':kraft.some(e=>wk.includes(e.datum)&&e.typ==='Pull')?'Legs (Kniebeuge, RDL, Lunges)':'Pull (Rücken, Bizeps)';recs.push({c:'var(--blue)',title:`Kraft: ${typ}`,text:`${t} Minuten reichen für 3–4 Hauptübungen à 3–4 Sätzen. Diese Woche erst ${kc}/3 Kraft-Sessions — heute wäre ideal.`,label:'Empfohlen'});}
+    if(lc<1&&t>=25)recs.push({c:'var(--green)',title:`Lockerer Lauf ${t>=50?'8–12':'4–6'} km`,text:`Diese Woche noch kein Lauf. Ziel-Pace: ${ps(avgPace+0.15)}/km (locker, Nasenatmung möglich). Baut Grundlagenausdauer auf.`,label:'Empfohlen'});
+    if(lc>=2&&kc>=2&&t>=20)recs.push({c:'var(--amber)',title:'Mobility — 20 Min',text:'Deine Woche läuft stark! Jetzt wäre eine gezielte Mobility-Einheit ideal: Hip Flexors, Thoracic Rotation, Hamstrings. Reduziert Verletzungsrisiko spürbar.',label:'Ergänzung'});
+    if(t<30&&lc===0&&kc===0)recs.push({c:'var(--green)',title:'10–15 Min Aktivierung',text:`Bei ${t} Minuten: Glute Bridges, Band Walks, Planks. Kurz aber wirkungsvoll — hält die Trainingsgewohnheit aufrecht.`,label:'Schnell'});
+  }
+  const pct=Math.round((lc+kc)/6*100);
+  recs.push({c:'var(--text3)',title:`Wochenstand: ${pct}% Planquote`,text:`${lc}/3 Läufe · ${kc}/3 Kraft · ${wk.indexOf(tod)+1}/7 Tage vergangen. ${pct>=80?'Exzellente Disziplin!':pct>=50?'Auf gutem Kurs.':'Aufholen noch möglich!'}`,label:'Status'});
+  const out=document.getElementById('coach-out');if(!out)return;
+  out.innerHTML=`<div class="cbub"><div class="ch">✦ Heute · ${selTime} Min verfügbar</div>${recs.map(r=>`<div class="ci"><div class="cdot" style="background:${r.c}"></div><div><div class="ctext"><strong style="color:var(--text)">${r.title}</strong><br>${r.text}</div><div class="clabel">${r.label}</div></div></div>`).join('')}</div>`;
+}
+
+// INIT
+document.getElementById('l-dat').value=today();
+document.getElementById('k-dat').value=today();
+document.getElementById('b-dat').value=today();
+['polar','adidas','alpha'].forEach(t=>{
+  const box=document.getElementById('ib-'+t);if(!box)return;
+  box.addEventListener('dragover',e=>{e.preventDefault();box.classList.add('drag');});
+  box.addEventListener('dragleave',()=>box.classList.remove('drag'));
+  box.addEventListener('drop',e=>{e.preventDefault();box.classList.remove('drag');const f=e.dataTransfer.files[0];if(f){const inp=document.getElementById('if-'+t);const dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;hf(inp,t);}});
+});
+updDash();
+</script>
+</body>
+</html>
